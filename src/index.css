@@ -1,0 +1,27 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  scroll-behavior: smooth;
+}
+
+img,
+picture,
+svg,
+video {
+  display: inline-block;
+  max-width: 100%;
+}
+
+a,
+button {
+  cursor: pointer;
+  border: none;
+  background-color: transparent;
+  text-decoration: none;
+}
