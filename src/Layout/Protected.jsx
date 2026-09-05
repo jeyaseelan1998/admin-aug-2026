@@ -2,6 +2,7 @@ import { Container, Spinner } from 'react-bootstrap'
 import { Navigate, Outlet } from 'react-router-dom'
 
 import Fetch from "../Components/Fetch";
+import Sidebar from "./Sidebar";
 
 function Protected() {
   return (
@@ -19,7 +20,14 @@ function Protected() {
           <>
             {
               !loading && data && (
-                <Outlet />
+                <div className="app-layout">
+                  <Sidebar />
+                  <main className="flex-grow-1" style={{ minWidth: 0 }}>
+                    <Container fluid className="py-4">
+                      <Outlet />
+                    </Container>
+                  </main>
+                </div>
               )
             }
             {
