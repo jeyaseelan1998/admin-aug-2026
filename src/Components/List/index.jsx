@@ -1,36 +1,60 @@
 import { useEffect, useRef, useState } from 'react'
 import { Button, Card, Spinner, Table } from 'react-bootstrap'
+import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import { FiCopy, FiEdit, FiEye, FiPlus, FiTrash, FiTrash2 } from '../Icons'
 import api from '../../helpers/axios'
+import { resolvePath } from '../../helpers/resolvePath'
+import Cell from './Cell'
 
 const resolveMessage = (message, value) =>
   typeof message === 'function' ? message(value) : message
-
-// Supports dotted paths into nested objects and arrays, e.g. 'address.0.city'.
-const resolvePath = (row, path) =>
-  String(path)
-    .split('.')
-    .reduce((value, segment) => (value == null ? undefined : value[segment]), row)
-
-const resolveCell = (row, column, index) =>
-  column.render ? column.render(row, index) : resolvePath(row, column.key)
 
 // Paged APIs report the overall count in one of a few usual places.
 const resolveTotal = (parsed) =>
   Array.isArray(parsed) ? null : parsed?.total ?? parsed?.meta?.total ?? parsed?.count ?? null
 
+// A preset with `path` navigates under the list's `basePath`; the rest call the API.
 const ACTION_PRESETS = {
-  VIEW: { label: 'View', variant: 'outline-secondary', method: 'GET' },
-  CREATE: { label: 'Create', variant: 'outline-success', method: 'POST' },
-  EDIT: { label: 'Edit', variant: 'outline-primary', method: 'PUT' },
-  UPDATE: { label: 'Update', variant: 'outline-primary', method: 'PATCH' },
+  VIEW: { label: 'View', variant: 'outline-secondary', icon: <FiEye />, path: (id) => id },
+  CLONE: {
+    label: 'Clone',
+    variant: 'outline-secondary',
+    icon: <FiCopy />,
+    path: (id) => `clone/${id}`,
+  },
+  EDIT: { label: 'Edit', variant: 'outline-primary', icon: <FiEdit />, path: (id) => `update/${id}` },
+  // Soft delete: the record is flagged, not dropped.
   DELETE: {
     label: 'Delete',
     variant: 'outline-danger',
-    method: 'DELETE',
+    method: 'PUT',
+    payload: { deleted: 1 },
     confirm: 'Delete this record?',
     remove: true,
+    icon: <FiTrash2 />,
   },
+  TRASH: {
+    label: 'Trash',
+    variant: 'danger',
+    method: 'DELETE',
+    confirm: 'Permanently delete this record? This cannot be undone.',
+    remove: true,
+    icon: <FiTrash />,
+  },
+}
+
+// Icon-only by default; pass `showLabel` to sit the text beside it. An action with
+// no icon always shows its label, so a custom action never renders an empty button.
+const showsLabel = (action) => Boolean(action.showLabel || !action.icon)
+
+const resolveActionPath = (action, row, index, basePath) => {
+  if (!action.path) return null
+
+  const id = resolvePath(row, action.idKey || 'id')
+  const suffix = typeof action.path === 'function' ? action.path(id, row, index) : action.path
+
+  return suffix == null ? null : [basePath, suffix].filter(Boolean).join('/')
 }
 
 // Accepts 'DELETE', ['DELETE', { ...overrides }] or a plain config object.
@@ -44,6 +68,8 @@ const normalizeAction = (action) => {
 
 export default function List({
   title,
+  basePath,
+  createUrl = basePath && `${basePath}/create`,
   columns,
   data,
   url,
@@ -237,16 +263,31 @@ export default function List({
     <Card>
       <Card.Body className="p-4">
         {title && (
-          <Card.Title as="h1" className="h4 mb-4">
-            {`${title}${count ? `(${count})` : ''}`}
-          </Card.Title>
+          <div className="d-flex justify-content-between align-items-center mb-4">
+            <Card.Title as="h1" className="h4 mb-0">
+              {`${title}${count ? `(${count})` : ''}`}
+            </Card.Title>
+
+            {createUrl && (
+              <Button
+                as={Link}
+                to={createUrl}
+                variant="primary"
+                size="sm"
+                className="d-inline-flex align-items-center gap-1"
+              >
+                <FiPlus />
+                Create
+              </Button>
+            )}
+          </div>
         )}
 
         <Table striped hover responsive {...props}>
           <thead>
             <tr>
-              {columns.map((column) => (
-                <th key={column.key}>{column.label}</th>
+              {columns.map((column, columnIndex) => (
+                <th key={`${column.key}-${columnIndex}`}>{column.label}</th>
               ))}
               {!!actions?.length && <th>{actionsLabel}</th>}
             </tr>
@@ -254,32 +295,46 @@ export default function List({
           <tbody>
             {items.map((row, index) => (
               <tr key={row.id ?? index}>
-                {columns.map((column) => (
-                  <td key={column.key}>{resolveCell(row, column, index)}</td>
+                {columns.map((column, columnIndex) => (
+                  <td key={`${column.key}-${columnIndex}`} className='align-middle'>
+                    <Cell row={row} column={column} index={index} />
+                  </td>
                 ))}
 
                 {!!actions?.length && (
                   <td className="text-nowrap">
-                    {actions.map(normalizeAction).map((action) =>
-                      action.hidden?.(row, index) ? null : (
+                    {actions.map(normalizeAction).map((action) => {
+                      if (action.hidden?.(row, index)) return null
+
+                      const to = resolveActionPath(action, row, index, basePath)
+                      const key = `${index}:${action.label}`
+
+                      return (
                         <Button
                           key={action.label}
+                          as={to ? Link : undefined}
+                          to={to}
                           variant={action.variant || 'outline-secondary'}
                           size={action.size || 'sm'}
-                          className="me-2"
-                          disabled={busy === `${index}:${action.label}` || action.disabled?.(row, index)}
-                          onClick={() => runAction(action, row, index)}
+                          className="me-2 d-inline-flex align-items-center gap-1"
+                          title={action.label}
+                          aria-label={action.label}
+                          disabled={busy === key || action.disabled?.(row, index)}
+                          onClick={to ? undefined : () => runAction(action, row, index)}
                         >
-                          {busy === `${index}:${action.label}` ? (
+                          {busy === key ? (
                             <Spinner animation="border" size="sm" role="status">
                               <span className="visually-hidden">Working…</span>
                             </Spinner>
                           ) : (
-                            action.label
+                            <>
+                              {action.icon}
+                              {showsLabel(action) && action.label}
+                            </>
                           )}
                         </Button>
-                      ),
-                    )}
+                      )
+                    })}
                   </td>
                 )}
               </tr>

@@ -22,7 +22,7 @@ function Protected() {
               !loading && data && (
                 <div className="app-layout">
                   <Sidebar />
-                  <main className="flex-grow-1" style={{ minWidth: 0 }}>
+                  <main className="app-content">
                     <Container fluid className="py-4">
                       <Outlet />
                     </Container>
@@ -32,7 +32,7 @@ function Protected() {
             }
             {
               !loading && !data && (
-                <Navigate to="/admin/login" replace />
+                <Navigate to="/login" replace />
               )
             }
           </>

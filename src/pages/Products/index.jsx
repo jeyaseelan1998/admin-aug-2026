@@ -9,5 +9,14 @@ const columns = [
 ]
 
 export default function Products() {
-  return <List title="Products" url="/product" columns={columns} empty="No products yet." />
+  return (
+    <List
+      title="Products"
+      basePath="/products"
+      url="/product"
+      columns={columns}
+      empty="No products yet."
+      actions={['VIEW', 'EDIT', 'CLONE', 'DELETE']}
+    />
+  )
 }

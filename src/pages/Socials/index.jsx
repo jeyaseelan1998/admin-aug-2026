@@ -6,5 +6,14 @@ const columns = [
 ]
 
 export default function Socials() {
-  return <List title="Socials" url="/social" columns={columns} empty="No socials yet." />
+  return (
+    <List
+      title="Socials"
+      basePath="/socials"
+      url="/social"
+      columns={columns}
+      empty="No socials yet."
+      actions={['VIEW', 'EDIT', 'CLONE', 'DELETE']}
+    />
+  )
 }

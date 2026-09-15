@@ -5,5 +5,14 @@ const columns = [
 ]
 
 export default function Categories() {
-  return <List title="Categories" url="/category" columns={columns} empty="No categories yet." />
+  return (
+    <List
+      title="Categories"
+      basePath="/categories"
+      url="/category"
+      columns={columns}
+      empty="No categories yet."
+      actions={['VIEW', 'EDIT', 'CLONE', 'DELETE']}
+    />
+  )
 }

@@ -13,7 +13,7 @@ export default function Login() {
           Login
         </Card.Title>
 
-        <Form url="/auth/signin" onSuccess={() => navigate('/admin')}>
+        <Form url="/auth/signin" onSuccess={() => navigate('/')}>
           {({ submitting }) => (
             <>
               <Field

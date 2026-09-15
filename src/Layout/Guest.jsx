@@ -21,7 +21,7 @@ function Guest() {
             }
             {
               !loading && data && (
-                <Navigate to="/admin" replace />
+                <Navigate to="/" replace />
               )
             }
           </>
