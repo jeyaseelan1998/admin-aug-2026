@@ -29,7 +29,7 @@ function ResponsiveToastContainer() {
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename='/admin'>
       <App />
       <ResponsiveToastContainer />
     </BrowserRouter>

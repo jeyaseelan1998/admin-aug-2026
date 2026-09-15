@@ -2,8 +2,10 @@ import { Button, Card } from 'react-bootstrap'
 import Form from '../../Components/Form'
 import Field from '../../Components/Form/Field'
 import { required } from '../../helpers/validators'
+import { useNavigate } from 'react-router-dom'
 
 export default function Login() {
+  const navigate = useNavigate();
   return (
     <Card>
       <Card.Body className="p-4">
@@ -11,7 +13,7 @@ export default function Login() {
           Login
         </Card.Title>
 
-        <Form url="/auth/signin">
+        <Form url="/auth/signin" onSuccess={() => navigate('/admin')}>
           {({ submitting }) => (
             <>
               <Field

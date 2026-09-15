@@ -3,36 +3,16 @@ import { Collapse, Offcanvas } from 'react-bootstrap'
 import { NavLink, useLocation } from 'react-router-dom'
 
 import {
-  FiArrowDown,
-  FiArrowUp,
   FiChevronDown,
   FiChevronUp,
-  FiCreditCard,
-  FiDollarSign,
   FiMenu,
   FiPlus,
-  FiRepeat,
   FiShield,
-  FiSmartphone,
-  FiTrendingUp,
 } from '../../Components/Icons'
+import SECTIONS from './menu'
 import './index.css'
 
 const MOBILE_QUERY = '(max-width: 780px)'
-
-const MENU = [
-  { to: '/', label: 'Portfolio', icon: FiTrendingUp, end: true },
-  { to: '/accounts', label: 'Accounts', icon: FiCreditCard },
-  { to: '/send', label: 'Send', icon: FiArrowUp },
-  { to: '/receive', label: 'Receive', icon: FiArrowDown },
-  { to: '/buy-sell', label: 'Buy / Sell', icon: FiDollarSign },
-  { to: '/swap', label: 'Swap', icon: FiRepeat },
-  { to: '/device', label: 'Device', icon: FiSmartphone },
-]
-
-const SECTIONS = [
-  { title: 'Menu', items: MENU },
-]
 
 const renderIcon = (icon) => (typeof icon === 'function' ? icon() : icon)
 
@@ -51,21 +31,43 @@ function SidebarLink({ to, label, icon, end, onNavigate, className = 'sidebar-li
   )
 }
 
+// A menu item with no `to` runs an action (logout, a modal) instead of navigating.
+function SidebarAction({ label, icon, onClick, onNavigate, className = 'sidebar-link', ...props }) {
+  return (
+    <button
+      type="button"
+      className={`${className} sidebar-group`}
+      onClick={() => {
+        onNavigate?.()
+        onClick?.()
+      }}
+      {...props}
+    >
+      {renderIcon(icon)}
+      {label}
+    </button>
+  )
+}
+
 function SidebarGroup({ label, icon, items = [], defaultOpen, onNavigate }) {
   const { pathname } = useLocation()
+
+  // Tied to the route it was made on, so navigating away drops the manual
+  // toggle and the group falls back to "open only while a child is active".
   const [toggled, setToggled] = useState(null)
 
   const hasActiveChild = items.some(
     (item) => pathname === item.to || pathname.startsWith(`${item.to}/`),
   )
-  const open = toggled ?? (defaultOpen || hasActiveChild)
+  const open =
+    toggled?.pathname === pathname ? toggled.open : defaultOpen || hasActiveChild
 
   return (
     <>
       <button
         type="button"
         className={open ? 'sidebar-link sidebar-group open' : 'sidebar-link sidebar-group'}
-        onClick={() => setToggled(!open)}
+        onClick={() => setToggled({ pathname, open: !open })}
         aria-expanded={open}
       >
         {renderIcon(icon)}
@@ -112,13 +114,17 @@ function SidebarSection({ title, items = [], action, onAdd, onNavigate }) {
             ))}
         </div>
       )}
-      {items.map((item, index) =>
-        item.items ? (
-          <SidebarGroup key={item.label || index} onNavigate={onNavigate} {...item} />
-        ) : (
+      {items.map((item, index) => {
+        if (item.items) {
+          return <SidebarGroup key={item.label || index} onNavigate={onNavigate} {...item} />
+        }
+
+        return item.to ? (
           <SidebarLink key={item.to} onNavigate={onNavigate} {...item} />
-        ),
-      )}
+        ) : (
+          <SidebarAction key={item.label || index} onNavigate={onNavigate} {...item} />
+        )
+      })}
     </nav>
   )
 }

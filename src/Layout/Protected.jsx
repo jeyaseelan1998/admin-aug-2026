@@ -32,7 +32,7 @@ function Protected() {
             }
             {
               !loading && !data && (
-                <Navigate to="/login" replace />
+                <Navigate to="/admin/login" replace />
               )
             }
           </>
