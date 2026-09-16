@@ -12,7 +12,7 @@ export default function Categories() {
       url="/category"
       columns={columns}
       empty="No categories yet."
-      actions={['VIEW', 'EDIT', 'CLONE', 'DELETE']}
+      actions={['VIEW', 'EDIT', 'CLONE', 'DELETE', 'RESTORE', 'TRASH']}
     />
   )
 }

@@ -39,6 +39,7 @@ import {
   FiTrash,
   FiTrash2,
   FiTrendingUp,
+  FiUpload,
   FiUsers,
   FiX,
 } from 'react-icons/fi'
@@ -87,6 +88,7 @@ export {
   FiTrash,
   FiTrash2,
   FiTrendingUp,
+  FiUpload,
   FiUsers,
   FiX,
 }

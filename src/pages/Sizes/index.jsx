@@ -12,7 +12,7 @@ export default function Sizes() {
       url="/size"
       columns={columns}
       empty="No sizes yet."
-      actions={['VIEW', 'EDIT', 'CLONE', 'DELETE']}
+      actions={['VIEW', 'EDIT', 'CLONE', 'DELETE', 'RESTORE', 'TRASH']}
     />
   )
 }

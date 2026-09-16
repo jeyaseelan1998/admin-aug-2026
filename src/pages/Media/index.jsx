@@ -1,7 +1,7 @@
 import { createElement } from 'react'
 import { Card } from 'react-bootstrap'
 import List from '../../Components/List'
-import { FiArchive, FiCode, FiFile, FiFileText, FiFilm, FiMusic } from '../../Components/Icons'
+import { fileIcon, isImage } from '../../helpers/fileIcon'
 
 const UNITS = ['B', 'KB', 'MB', 'GB']
 
@@ -17,33 +17,8 @@ const formatSize = (size) => {
   return `${unit ? value.toFixed(1) : value} ${UNITS[unit]}`
 }
 
-// Matched against the mimetype in order, so `application/zip` picks the archive
-// before the generic fallback. Images are drawn from their url instead.
-const FILE_ICONS = [
-  [/^video\//, FiFilm],
-  [/^audio\//, FiMusic],
-  [/^text\/(html|css|javascript)|(json|xml|javascript)$/, FiCode],
-  [/^text\/|pdf|word|document|sheet|presentation/, FiFileText],
-  [/zip|tar|rar|7z|gzip|compressed/, FiArchive],
-]
-
-const fileIcon = (mimetype = '') =>
-  FILE_ICONS.find(([pattern]) => pattern.test(mimetype))?.[1] || FiFile
-
 // A live record can be flagged deleted; one already flagged can only be purged.
-// Media's soft delete is its own route (PATCH /media/:id/delete) and takes no
-// body, unlike the preset's PATCH on the record itself.
-const actions = [
-  [
-    'DELETE',
-    {
-      url: (media) => `/media/${media.id}/delete`,
-      payload: undefined,
-      hidden: (media) => media.deleted === 1,
-    },
-  ],
-  ['TRASH', { hidden: (media) => media.deleted !== 1 }],
-]
+const actions = ['DELETE', 'RESTORE', 'TRASH']
 
 // A flagged record stays in the grid, greyed out, until it is purged.
 const DELETED_STYLE = { filter: 'grayscale(1)', opacity: 0.4 }
@@ -60,7 +35,7 @@ const renderItem = (media, { actions: itemActions }) => {
           className="ratio ratio-1x1 bg-light rounded-top overflow-hidden"
           style={isDeleted ? DELETED_STYLE : undefined}
         >
-          {media.mimetype?.startsWith('image/') ? (
+          {isImage(media.mimetype) ? (
             <img
               src={media.url}
               alt={media.originalName}

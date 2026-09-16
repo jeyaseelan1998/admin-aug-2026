@@ -12,7 +12,7 @@ export default function Brands() {
       url="/brand"
       columns={columns}
       empty="No brands yet."
-      actions={['VIEW', 'EDIT', 'CLONE', 'DELETE']}
+      actions={['VIEW', 'EDIT', 'CLONE', 'DELETE', 'RESTORE', 'TRASH']}
     />
   )
 }

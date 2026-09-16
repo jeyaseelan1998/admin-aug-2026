@@ -16,7 +16,7 @@ export default function Products() {
       url="/product"
       columns={columns}
       empty="No products yet."
-      actions={['VIEW', 'EDIT', 'CLONE', 'DELETE']}
+      actions={['VIEW', 'EDIT', 'CLONE', 'DELETE', 'RESTORE', 'TRASH']}
     />
   )
 }

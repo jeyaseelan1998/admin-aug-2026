@@ -2,9 +2,10 @@ import Field from '../../Components/Form/Field'
 import ResourceForm from '../../Components/ResourceForm'
 import { required } from '../../helpers/validators'
 
-const parseNumber = (value) => (value === '' ? undefined : Number(value))
-
-const parseMedia = (value) => value || null
+// The field holds text, so the digits stay exactly as typed -- '1.50' survives,
+// where coercing each keystroke would swallow the trailing zero. An empty field
+// drops out of the payload entirely, since the API rejects '' for a number.
+const parseNumber = (value) => (value === '' ? undefined : value)
 
 const formatIds = (value) => (Array.isArray(value) ? value.join(', ') : value || '')
 
@@ -49,9 +50,8 @@ export default function ProductForm({ mode }) {
           <Field
             name="thumbnail"
             label="Thumbnail"
-            placeholder="Media id"
+            type="image"
             disabled={isView}
-            parse={parseMedia}
             validate={required('Thumbnail is required')}
           />
           <Field

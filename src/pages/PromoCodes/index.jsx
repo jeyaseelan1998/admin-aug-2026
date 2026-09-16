@@ -13,7 +13,7 @@ export default function PromoCodes() {
       url="/promo-code"
       columns={columns}
       empty="No promo codes yet."
-      actions={['VIEW', 'EDIT', 'CLONE', 'DELETE']}
+      actions={['VIEW', 'EDIT', 'CLONE', 'DELETE', 'RESTORE', 'TRASH']}
     />
   )
 }

@@ -13,7 +13,7 @@ export default function Socials() {
       url="/social"
       columns={columns}
       empty="No socials yet."
-      actions={['VIEW', 'EDIT', 'CLONE', 'DELETE']}
+      actions={['VIEW', 'EDIT', 'CLONE', 'DELETE', 'RESTORE', 'TRASH']}
     />
   )
 }

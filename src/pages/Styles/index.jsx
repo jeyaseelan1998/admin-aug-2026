@@ -12,7 +12,7 @@ export default function Styles() {
       url="/style"
       columns={columns}
       empty="No styles yet."
-      actions={['VIEW', 'EDIT', 'CLONE', 'DELETE']}
+      actions={['VIEW', 'EDIT', 'CLONE', 'DELETE', 'RESTORE', 'TRASH']}
     />
   )
 }

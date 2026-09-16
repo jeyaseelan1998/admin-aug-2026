@@ -61,7 +61,7 @@ export default function ResourceForm({
               {typeof children === 'function' ? children({ ...formProps, mode, isView }) : children}
 
               {!isView && (
-                <Button type="submit" variant="primary" disabled={formProps.submitting}>
+                <Button type="submit" variant="primary" disabled={formProps.submitting} className='ms-auto d-block'>
                   {isUpdate ? 'Update' : 'Create'}
                 </Button>
               )}

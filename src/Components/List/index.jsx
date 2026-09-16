@@ -2,7 +2,7 @@ import { Fragment, useEffect, useRef, useState } from 'react'
 import { Button, Card, Spinner, Table } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { FiCopy, FiEdit, FiEye, FiPlus, FiTrash, FiX } from '../Icons'
+import { FiCopy, FiEdit, FiEye, FiPlus, FiRepeat, FiTrash, FiX } from '../Icons'
 import api from '../../helpers/axios'
 import { resolvePath } from '../../helpers/resolvePath'
 import Cell from './Cell'
@@ -13,6 +13,10 @@ const resolveMessage = (message, value) =>
 // Paged APIs report the overall count in one of a few usual places.
 const resolveTotal = (parsed) =>
   Array.isArray(parsed) ? null : parsed?.total ?? parsed?.meta?.total ?? parsed?.count ?? null
+
+// The soft-delete flag the API sets; a flagged row is shown greyed out.
+const ACTIVE = 0
+const DELETED = 1
 
 // A preset with `path` navigates under the list's `basePath`; the rest call the API.
 const ACTION_PRESETS = {
@@ -29,15 +33,28 @@ const ACTION_PRESETS = {
     icon: <FiEdit />,
     path: (id) => `${id}/update`,
   },
-  // Soft delete: the record is flagged, not dropped.
+  // Soft delete: the record is flagged, not dropped. Every resource exposes it
+  // at its own PATCH /:id/delete, which takes no body. The row stays in the
+  // list, flagged, so only the permanent delete is offered from then on.
   DELETE: {
     label: 'Delete',
     variant: 'outline-danger',
     method: 'PATCH',
-    payload: { deleted: 1 },
+    urlSuffix: 'delete',
     confirm: 'Delete this record?',
-    remove: true,
+    patch: { deleted: DELETED },
     icon: <FiX />,
+    hidden: (row) => row.deleted === DELETED,
+  },
+  // Restore: clears the flag the soft delete set, at the mirror of its route.
+  RESTORE: {
+    label: 'Restore',
+    variant: 'outline-success',
+    method: 'PATCH',
+    urlSuffix: 'restore',
+    patch: { deleted: ACTIVE },
+    icon: <FiRepeat />,
+    hidden: (row) => row.deleted !== DELETED,
   },
   TRASH: {
     label: 'Trash',
@@ -46,6 +63,7 @@ const ACTION_PRESETS = {
     confirm: 'Permanently delete this record? This cannot be undone.',
     remove: true,
     icon: <FiTrash />,
+    hidden: (row) => row.deleted !== DELETED,
   },
 }
 
@@ -185,7 +203,9 @@ export default function List({
     const actionUrl =
       typeof action.url === 'function'
         ? action.url(row, index)
-        : action.url || (url && `${url}/${resolvePath(row, action.idKey || 'id')}`)
+        : action.url ||
+          (url &&
+            [url, resolvePath(row, action.idKey || 'id'), action.urlSuffix].filter(Boolean).join('/'))
 
     if (!actionUrl) return
 
@@ -212,6 +232,10 @@ export default function List({
       if (action.remove) {
         setRows((previous) => previous.filter((item) => item !== row))
         setTotal((previous) => (previous == null ? previous : previous - 1))
+      } else if (action.patch) {
+        setRows((previous) =>
+          previous.map((item) => (item === row ? { ...item, ...action.patch } : item))
+        )
       }
 
       if (action.successMessage) {
@@ -354,7 +378,10 @@ export default function List({
               {items.map((row, index) => (
                 <tr key={row.id ?? index}>
                   {columns.map((column, columnIndex) => (
-                    <td key={`${column.key}-${columnIndex}`} className='align-middle'>
+                    <td
+                      key={`${column.key}-${columnIndex}`}
+                      className={`align-middle ${row.deleted === DELETED ? 'text-muted opacity-50' : ''}`}
+                    >
                       <Cell row={row} column={column} index={index} />
                     </td>
                   ))}

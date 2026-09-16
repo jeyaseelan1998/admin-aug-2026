@@ -5,8 +5,6 @@ import { required } from '../../helpers/validators'
 // The record carries populated media; the API takes its id back.
 const toValues = (brand) => ({ ...brand, image: brand.image?.id ?? null })
 
-const parseMedia = (value) => value || null
-
 export default function BrandForm({ mode }) {
   return (
     <ResourceForm
@@ -25,7 +23,7 @@ export default function BrandForm({ mode }) {
             disabled={isView}
             validate={required('Name is required')}
           />
-          <Field name="image" label="Image" placeholder="Media id" disabled={isView} parse={parseMedia} />
+          <Field name="image" label="Image" type="image" disabled={isView} />
         </>
       )}
     </ResourceForm>

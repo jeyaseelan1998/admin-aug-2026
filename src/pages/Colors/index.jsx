@@ -14,7 +14,7 @@ export default function Colors() {
       url="/color"
       columns={columns}
       empty="No colors yet."
-      actions={["VIEW", "EDIT", "CLONE", "DELETE", "TRASH"]}
+      actions={["VIEW", "EDIT", "CLONE", "DELETE", "RESTORE", "TRASH"]}
     />
   )
 }
