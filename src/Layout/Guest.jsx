@@ -7,6 +7,7 @@ function Guest() {
   return (
     <Fetch
       url="/auth/profile"
+      toastOnError={false}
       render={({ loading, data }) => {
         return (
           <>

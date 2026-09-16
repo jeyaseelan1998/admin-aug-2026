@@ -1,8 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { Button, Card, Spinner, Table } from 'react-bootstrap'
 import { Link } from 'react-router-dom'
 import { toast } from 'react-toastify'
-import { FiCopy, FiEdit, FiEye, FiPlus, FiTrash, FiTrash2 } from '../Icons'
+import { FiCopy, FiEdit, FiEye, FiPlus, FiTrash, FiX } from '../Icons'
 import api from '../../helpers/axios'
 import { resolvePath } from '../../helpers/resolvePath'
 import Cell from './Cell'
@@ -21,22 +21,27 @@ const ACTION_PRESETS = {
     label: 'Clone',
     variant: 'outline-secondary',
     icon: <FiCopy />,
-    path: (id) => `clone/${id}`,
+    path: (id) => `${id}/copy`,
   },
-  EDIT: { label: 'Edit', variant: 'outline-primary', icon: <FiEdit />, path: (id) => `update/${id}` },
+  EDIT: {
+    label: 'Edit',
+    variant: 'outline-primary',
+    icon: <FiEdit />,
+    path: (id) => `${id}/update`,
+  },
   // Soft delete: the record is flagged, not dropped.
   DELETE: {
     label: 'Delete',
     variant: 'outline-danger',
-    method: 'PUT',
+    method: 'PATCH',
     payload: { deleted: 1 },
     confirm: 'Delete this record?',
     remove: true,
-    icon: <FiTrash2 />,
+    icon: <FiX />,
   },
   TRASH: {
     label: 'Trash',
-    variant: 'danger',
+    variant: 'outline-danger',
     method: 'DELETE',
     confirm: 'Permanently delete this record? This cannot be undone.',
     remove: true,
@@ -70,7 +75,13 @@ export default function List({
   title,
   basePath,
   createUrl = basePath && `${basePath}/create`,
-  columns,
+  columns = [],
+  // Draws one row as custom markup instead of a table row, so a list can be a
+  // gallery, a card deck, anything: `(row, { index, actions }) => jsx`, where
+  // `actions` is the same buttons the table renders, for the item to place.
+  renderItem,
+  // Classes for the element wrapping the custom items — the layout itself.
+  itemsClassName = 'row g-3',
   data,
   url,
   params,
@@ -219,6 +230,44 @@ export default function List({
     }
   }
 
+  const renderActions = (row, index) =>
+    !actions?.length ? null : (
+      <>
+        {actions.map(normalizeAction).map((action) => {
+          if (action.hidden?.(row, index)) return null
+
+          const to = resolveActionPath(action, row, index, basePath)
+          const key = `${index}:${action.label}`
+
+          return (
+            <Button
+              key={action.label}
+              as={to ? Link : undefined}
+              to={to}
+              variant={action.variant || 'outline-secondary'}
+              size={action.size || 'sm'}
+              className="me-2 d-inline-flex align-items-center gap-1"
+              title={action.label}
+              aria-label={action.label}
+              disabled={busy === key || action.disabled?.(row, index)}
+              onClick={to ? undefined : () => runAction(action, row, index)}
+            >
+              {busy === key ? (
+                <Spinner animation="border" size="sm" role="status">
+                  <span className="visually-hidden">Working…</span>
+                </Spinner>
+              ) : (
+                <>
+                  {action.icon}
+                  {showsLabel(action) && action.label}
+                </>
+              )}
+            </Button>
+          )
+        })}
+      </>
+    )
+
   useEffect(() => {
     latest.current = {
       params,
@@ -283,75 +332,56 @@ export default function List({
           </div>
         )}
 
-        <Table striped hover responsive {...props}>
-          <thead>
-            <tr>
-              {columns.map((column, columnIndex) => (
-                <th key={`${column.key}-${columnIndex}`}>{column.label}</th>
-              ))}
-              {!!actions?.length && <th>{actionsLabel}</th>}
-            </tr>
-          </thead>
-          <tbody>
+        {renderItem ? (
+          <div className={itemsClassName} {...props}>
             {items.map((row, index) => (
-              <tr key={row.id ?? index}>
-                {columns.map((column, columnIndex) => (
-                  <td key={`${column.key}-${columnIndex}`} className='align-middle'>
-                    <Cell row={row} column={column} index={index} />
-                  </td>
-                ))}
-
-                {!!actions?.length && (
-                  <td className="text-nowrap">
-                    {actions.map(normalizeAction).map((action) => {
-                      if (action.hidden?.(row, index)) return null
-
-                      const to = resolveActionPath(action, row, index, basePath)
-                      const key = `${index}:${action.label}`
-
-                      return (
-                        <Button
-                          key={action.label}
-                          as={to ? Link : undefined}
-                          to={to}
-                          variant={action.variant || 'outline-secondary'}
-                          size={action.size || 'sm'}
-                          className="me-2 d-inline-flex align-items-center gap-1"
-                          title={action.label}
-                          aria-label={action.label}
-                          disabled={busy === key || action.disabled?.(row, index)}
-                          onClick={to ? undefined : () => runAction(action, row, index)}
-                        >
-                          {busy === key ? (
-                            <Spinner animation="border" size="sm" role="status">
-                              <span className="visually-hidden">Working…</span>
-                            </Spinner>
-                          ) : (
-                            <>
-                              {action.icon}
-                              {showsLabel(action) && action.label}
-                            </>
-                          )}
-                        </Button>
-                      )
-                    })}
-                  </td>
-                )}
-              </tr>
+              <Fragment key={row.id ?? index}>
+                {renderItem(row, { index, actions: renderActions(row, index) })}
+              </Fragment>
             ))}
-
-            {!items.length && !loading && (
+          </div>
+        ) : (
+          <Table striped hover responsive {...props}>
+            <thead>
               <tr>
-                <td
-                  colSpan={columns.length + (actions?.length ? 1 : 0)}
-                  className="text-center text-muted py-4"
-                >
-                  {empty}
-                </td>
+                {columns.map((column, columnIndex) => (
+                  <th key={`${column.key}-${columnIndex}`}>{column.label}</th>
+                ))}
+                {!!actions?.length && <th>{actionsLabel}</th>}
               </tr>
-            )}
-          </tbody>
-        </Table>
+            </thead>
+            <tbody>
+              {items.map((row, index) => (
+                <tr key={row.id ?? index}>
+                  {columns.map((column, columnIndex) => (
+                    <td key={`${column.key}-${columnIndex}`} className='align-middle'>
+                      <Cell row={row} column={column} index={index} />
+                    </td>
+                  ))}
+
+                  {!!actions?.length && (
+                    <td className="text-nowrap">{renderActions(row, index)}</td>
+                  )}
+                </tr>
+              ))}
+
+              {!items.length && !loading && (
+                <tr>
+                  <td
+                    colSpan={columns.length + (actions?.length ? 1 : 0)}
+                    className="text-center text-muted py-4"
+                  >
+                    {empty}
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </Table>
+        )}
+
+        {renderItem && !items.length && !loading && (
+          <div className="text-center text-muted py-4">{empty}</div>
+        )}
 
         {loading && (
           <div className="d-flex justify-content-center py-4">

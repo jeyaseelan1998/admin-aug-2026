@@ -15,7 +15,7 @@ const stripServerFields = (record) => {
 
 const TITLE_PREFIX = { create: 'Create', update: 'Edit', clone: 'Clone', view: '' }
 
-// The shared shell behind /x/create, /x/update/:id, /x/clone/:id and /x/:id.
+// The shared shell behind /xs/create, /xs/:id, /xs/:id/update and /xs/:id/copy.
 export default function ResourceForm({
   mode = 'create',
   title,

@@ -20,7 +20,7 @@ import {
 } from '../../Components/Icons'
 import api from '../../helpers/axios'
 
-const PAGE = [
+const CONTENT = [
   { to: '/pages', label: 'Pages', icon: FiFileText, end: true },
   {
     label: 'Sections',
@@ -70,7 +70,7 @@ const ACCOUNT = [
 ]
 
 const SECTIONS = [
-  { title: 'Page', items: PAGE },
+  { title: 'Content', items: CONTENT },
   { title: 'Product', items: PRODUCT },
   { title: 'Admin', items: ADMIN },
   { title: 'Account', items: ACCOUNT },

@@ -42,46 +42,46 @@ function App() {
 
         <Route path="/products" element={<Products />} />
         <Route path="/products/create" element={<ProductForm />} />
-        <Route path="/products/update/:id" element={<ProductForm mode="update" />} />
-        <Route path="/products/clone/:id" element={<ProductForm mode="clone" />} />
+        <Route path="/products/:id/update" element={<ProductForm mode="update" />} />
+        <Route path="/products/:id/copy" element={<ProductForm mode="clone" />} />
         <Route path="/products/:id" element={<ProductForm mode="view" />} />
         <Route path="/brands" element={<Brands />} />
         <Route path="/brands/create" element={<BrandForm />} />
-        <Route path="/brands/update/:id" element={<BrandForm mode="update" />} />
-        <Route path="/brands/clone/:id" element={<BrandForm mode="clone" />} />
+        <Route path="/brands/:id/update" element={<BrandForm mode="update" />} />
+        <Route path="/brands/:id/copy" element={<BrandForm mode="clone" />} />
         <Route path="/brands/:id" element={<BrandForm mode="view" />} />
         <Route path="/categories" element={<Categories />} />
         <Route path="/categories/create" element={<CategoryForm />} />
-        <Route path="/categories/update/:id" element={<CategoryForm mode="update" />} />
-        <Route path="/categories/clone/:id" element={<CategoryForm mode="clone" />} />
+        <Route path="/categories/:id/update" element={<CategoryForm mode="update" />} />
+        <Route path="/categories/:id/copy" element={<CategoryForm mode="clone" />} />
         <Route path="/categories/:id" element={<CategoryForm mode="view" />} />
         <Route path="/styles" element={<Styles />} />
         <Route path="/styles/create" element={<StyleForm />} />
-        <Route path="/styles/update/:id" element={<StyleForm mode="update" />} />
-        <Route path="/styles/clone/:id" element={<StyleForm mode="clone" />} />
+        <Route path="/styles/:id/update" element={<StyleForm mode="update" />} />
+        <Route path="/styles/:id/copy" element={<StyleForm mode="clone" />} />
         <Route path="/styles/:id" element={<StyleForm mode="view" />} />
         <Route path="/colors" element={<Colors />} />
         <Route path="/colors/create" element={<ColorForm />} />
-        <Route path="/colors/update/:id" element={<ColorForm mode="update" />} />
-        <Route path="/colors/clone/:id" element={<ColorForm mode="clone" />} />
+        <Route path="/colors/:id/update" element={<ColorForm mode="update" />} />
+        <Route path="/colors/:id/copy" element={<ColorForm mode="clone" />} />
         <Route path="/colors/:id" element={<ColorForm mode="view" />} />
         <Route path="/sizes" element={<Sizes />} />
         <Route path="/sizes/create" element={<SizeForm />} />
-        <Route path="/sizes/update/:id" element={<SizeForm mode="update" />} />
-        <Route path="/sizes/clone/:id" element={<SizeForm mode="clone" />} />
+        <Route path="/sizes/:id/update" element={<SizeForm mode="update" />} />
+        <Route path="/sizes/:id/copy" element={<SizeForm mode="clone" />} />
         <Route path="/sizes/:id" element={<SizeForm mode="view" />} />
 
         <Route path="/users" element={<Users />} />
         <Route path="/promo-codes" element={<PromoCodes />} />
         <Route path="/promo-codes/create" element={<PromoCodeForm />} />
-        <Route path="/promo-codes/update/:id" element={<PromoCodeForm mode="update" />} />
-        <Route path="/promo-codes/clone/:id" element={<PromoCodeForm mode="clone" />} />
+        <Route path="/promo-codes/:id/update" element={<PromoCodeForm mode="update" />} />
+        <Route path="/promo-codes/:id/copy" element={<PromoCodeForm mode="clone" />} />
         <Route path="/promo-codes/:id" element={<PromoCodeForm mode="view" />} />
         <Route path="/media" element={<Media />} />
         <Route path="/socials" element={<Socials />} />
         <Route path="/socials/create" element={<SocialForm />} />
-        <Route path="/socials/update/:id" element={<SocialForm mode="update" />} />
-        <Route path="/socials/clone/:id" element={<SocialForm mode="clone" />} />
+        <Route path="/socials/:id/update" element={<SocialForm mode="update" />} />
+        <Route path="/socials/:id/copy" element={<SocialForm mode="clone" />} />
         <Route path="/socials/:id" element={<SocialForm mode="view" />} />
       </Route>
 
