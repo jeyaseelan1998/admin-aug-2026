@@ -327,7 +327,9 @@ function SearchSelect({
                   type="button"
                   role="option"
                   aria-selected={false}
-                  className={`dropdown-item text-truncate ${index === active ? 'active' : ''}`}
+                  className={`dropdown-item px-3 py-1 text-truncate ${
+                    index === active ? 'active' : ''
+                  }`}
                   onMouseEnter={() => setActive(index)}
                   onClick={() => toggle(option)}
                 >

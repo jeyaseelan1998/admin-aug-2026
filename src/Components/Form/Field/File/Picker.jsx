@@ -11,18 +11,10 @@ const asFile = (media) => ({ type: media.mimetype || '', name: media.originalNam
  * Nothing is written here: the field decides what to do with the selection,
  * so closing without saving leaves the form untouched.
  */
-export default function MediaPicker({ show, multiple, accept, onClose, onSave }) {
-  const [picked, setPicked] = useState([])
-
-  const close = () => {
-    setPicked([])
-    onClose()
-  }
-
-  const save = () => {
-    onSave(picked)
-    setPicked([])
-  }
+export default function MediaPicker({ multiple, accept, selected = [], onClose, onSave }) {
+  // Mounted only while open, so opening starts from what the field already
+  // holds: what is attached shows as picked, and can be unpicked here.
+  const [picked, setPicked] = useState(selected)
 
   const toggle = (media) => {
     setPicked((previous) => {
@@ -50,27 +42,31 @@ export default function MediaPicker({ show, multiple, accept, onClose, onSave })
         <button
           type="button"
           className={`btn w-100 p-1 border rounded text-start ${
-            selected ? 'border-primary border-2 bg-primary-subtle' : ''
+            selected ? 'border-primary border-2' : ''
           }`}
           aria-pressed={selected}
           onClick={() => toggle(media)}
         >
-          <div className="position-relative ratio ratio-1x1 bg-body-secondary rounded overflow-hidden">
-            {isImage(media.mimetype) ? (
-              <img
-                src={media.url}
-                alt={media.originalName}
-                className="w-100 h-100 object-fit-cover"
-                loading="lazy"
-              />
-            ) : (
-              <div className="d-flex align-items-center justify-content-center text-muted fs-4">
-                {createElement(fileIcon(media.mimetype))}
-              </div>
-            )}
+          {/* The tick sits outside the ratio box: Bootstrap stretches whatever
+              is inside one to fill it, which would cover the picture. */}
+          <div className="position-relative">
+            <div className="ratio ratio-1x1 bg-body-secondary rounded overflow-hidden">
+              {isImage(media.mimetype) ? (
+                <img
+                  src={media.url}
+                  alt={media.originalName}
+                  className="w-100 h-100 object-fit-cover"
+                  loading="lazy"
+                />
+              ) : (
+                <div className="d-flex align-items-center justify-content-center text-muted fs-4">
+                  {createElement(fileIcon(media.mimetype))}
+                </div>
+              )}
+            </div>
 
             {selected && (
-              <span className="position-absolute top-0 end-0 m-1 badge text-bg-primary d-inline-flex p-1">
+              <span className="position-absolute top-0 end-0 m-1 badge rounded-circle text-bg-primary d-inline-flex p-1 lh-1">
                 <FiCheck />
               </span>
             )}
@@ -85,7 +81,7 @@ export default function MediaPicker({ show, multiple, accept, onClose, onSave })
   }
 
   return (
-    <Modal show={show} onHide={close} size="lg" scrollable>
+    <Modal show onHide={onClose} size="lg" scrollable>
       <Modal.Header closeButton>
         <Modal.Title as="h2" className="h5 mb-0">
           {multiple ? 'Select files' : 'Select a file'}
@@ -101,10 +97,10 @@ export default function MediaPicker({ show, multiple, accept, onClose, onSave })
           {picked.length ? `${picked.length} selected` : 'Nothing selected'}
         </span>
 
-        <Button variant="outline-secondary" onClick={close}>
+        <Button variant="outline-secondary" onClick={onClose}>
           Cancel
         </Button>
-        <Button variant="primary" disabled={!picked.length} onClick={save}>
+        <Button variant="primary" disabled={!picked.length} onClick={() => onSave(picked)}>
           Save
         </Button>
       </Modal.Footer>

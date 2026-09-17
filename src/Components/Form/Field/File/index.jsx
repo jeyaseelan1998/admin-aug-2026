@@ -26,6 +26,9 @@ const DELETE_WARNING =
 
 const formatMb = (bytes) => `${(bytes / MB).toFixed(bytes % MB ? 1 : 0)}MB`
 
+const apiError = (error) =>
+  error.response?.data?.error || error.response?.data?.message || error.message
+
 const toIds = (value) => (Array.isArray(value) ? value : value ? [value] : [])
 
 /**
@@ -69,7 +72,10 @@ export default function FileInput({
 
   const picker = useRef(null)
 
-  const remember = (record) => setRecords((previous) => ({ ...previous, [record.id]: record }))
+  // Merged, so a record handed back by the picker as a bare id never wipes a
+  // preview that has already been read.
+  const remember = (record) =>
+    setRecords((previous) => ({ ...previous, [record.id]: { ...previous[record.id], ...record } }))
 
   // Ids the form arrived with carry no preview, so those are read back.
   const unknown = values.filter((id) => !records[id]).join(',')
@@ -111,46 +117,74 @@ export default function FileInput({
     return ''
   }
 
-  const upload = async (event) => {
-    const file = event.target.files?.[0]
-
-    // Clearing lets the same file be picked again after a removal.
-    event.target.value = ''
-
-    if (!file) return
-
-    const problem = reject(file)
-
-    setRejected(problem)
-
-    if (problem) return
-
+  const send = async (file, replacing) => {
     const body = new FormData()
 
     body.append('file', file)
 
+    // The shared client sends JSON; the boundary has to come from the browser.
+    const { data } = await api({
+      url: replacing ? `${MEDIA_URL}/${values[0]}` : MEDIA_URL,
+      method: replacing ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'multipart/form-data' },
+      data: body,
+    })
+
+    return data.media ?? data
+  }
+
+  const upload = async (event) => {
+    // A list takes everything picked; a single field only ever the first.
+    const chosen = Array.from(event.target.files || [])
+    const files = multiple ? chosen : chosen.slice(0, 1)
+
+    // Clearing lets the same file be picked again after a removal.
+    event.target.value = ''
+
+    if (!files.length) return
+
+    const problems = []
+    const accepted = []
+
+    // One bad file out of several is reported and skipped, not a reason to
+    // drop the rest of the batch.
+    for (const file of files) {
+      const problem = reject(file)
+
+      if (problem) problems.push(problem)
+      else accepted.push(file)
+    }
+
+    setRejected(problems.join(' '))
+
+    if (!accepted.length) return
+
     // Only a single field swaps in place; a list appends instead.
     const replacing = !multiple && Boolean(values[0]) && replaceable && overwrite
+    const uploaded = []
 
-    setBusy('upload')
+    // One at a time, so the order picked is the order stored and the API is
+    // not handed a burst of large bodies at once.
+    for (const [index, file] of accepted.entries()) {
+      setBusy(accepted.length > 1 ? `upload:${index + 1}/${accepted.length}` : 'upload')
 
-    try {
-      // The shared client sends JSON; the boundary has to come from the browser.
-      const { data } = await api({
-        url: replacing ? `${MEDIA_URL}/${values[0]}` : MEDIA_URL,
-        method: replacing ? 'PUT' : 'POST',
-        headers: { 'Content-Type': 'multipart/form-data' },
-        data: body,
-      })
-      const record = data.media ?? data
-
-      remember(record)
-      commit(multiple ? [...values, record.id] : [record.id])
-    } catch (error) {
-      toast.error(error.response?.data?.error || error.response?.data?.message || error.message)
-    } finally {
-      setBusy('')
+      try {
+        uploaded.push(await send(file, replacing))
+      } catch (error) {
+        toast.error(apiError(error))
+      }
     }
+
+    // Whatever made it through is kept, even if a later one failed.
+    if (uploaded.length) {
+      uploaded.forEach(remember)
+
+      const ids = uploaded.map((record) => record.id)
+
+      commit(multiple ? [...values, ...ids] : ids.slice(0, 1))
+    }
+
+    setBusy('')
   }
 
   const pick = () => picker.current?.click()
@@ -179,20 +213,25 @@ export default function FileInput({
 
       detach(id)
     } catch (error) {
-      toast.error(error.response?.data?.error || error.response?.data?.message || error.message)
+      toast.error(apiError(error))
     } finally {
       setBusy('')
     }
   }
 
+  // The picker opens on the current selection, so what comes back is the whole
+  // of it: anything unpicked there is dropped here.
   const select = (chosen) => {
     chosen.forEach(remember)
 
     const ids = chosen.map((record) => record.id)
 
-    commit(multiple ? [...values, ...ids.filter((id) => !values.includes(id))] : ids.slice(0, 1))
+    commit(multiple ? ids : ids.slice(0, 1))
     setPicking(false)
   }
+
+  const uploading = busy.startsWith('upload')
+  const progress = uploading ? busy.split(':')[1] : ''
 
   const invalid = (meta.touched && Boolean(meta.error)) || Boolean(rejected)
 
@@ -259,6 +298,7 @@ export default function FileInput({
         ref={picker}
         type="file"
         accept={accept}
+        multiple={multiple}
         className="d-none"
         disabled={disabled || Boolean(busy)}
         onChange={upload}
@@ -277,10 +317,13 @@ export default function FileInput({
             disabled={disabled || Boolean(busy)}
             onClick={pick}
           >
-            {busy === 'upload' ? (
-              <Spinner animation="border" role="status">
-                <span className="visually-hidden">Uploading…</span>
-              </Spinner>
+            {uploading ? (
+              <>
+                <Spinner animation="border" role="status">
+                  <span className="visually-hidden">Uploading…</span>
+                </Spinner>
+                {progress && <span className="small">Uploading {progress}…</span>}
+              </>
             ) : (
               <>
                 <FiUpload size={24} />
@@ -315,7 +358,7 @@ export default function FileInput({
               onClick={pick}
             >
               {multiple && Boolean(values.length) ? <FiPlus /> : <FiUpload />}
-              {busy === 'upload' ? 'Uploading…' : 'Upload'}
+              {uploading ? `Uploading${progress ? ` ${progress}` : ''}…` : 'Upload'}
             </Button>
           )}
 
@@ -326,7 +369,7 @@ export default function FileInput({
               disabled={Boolean(busy)}
               onClick={replace}
             >
-              {busy === 'upload' ? 'Uploading…' : 'Replace'}
+              {uploading ? 'Uploading…' : 'Replace'}
             </Button>
           )}
 
@@ -351,11 +394,11 @@ export default function FileInput({
 
       {rejected && <div className="small text-danger mt-2">{rejected}</div>}
 
-      {allowExisting && (
+      {allowExisting && picking && (
         <MediaPicker
-          show={picking}
           multiple={multiple}
           accept={accept}
+          selected={values.map((id) => records[id] ?? { id })}
           onClose={() => setPicking(false)}
           onSave={select}
         />
