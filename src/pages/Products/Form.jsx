@@ -7,14 +7,6 @@ import { required } from '../../helpers/validators'
 // drops out of the payload entirely, since the API rejects '' for a number.
 const parseNumber = (value) => (value === '' ? undefined : value)
 
-const formatIds = (value) => (Array.isArray(value) ? value.join(', ') : value || '')
-
-const parseIds = (value) =>
-  value
-    .split(',')
-    .map((id) => id.trim())
-    .filter(Boolean)
-
 // Relations come back populated; the API takes ids. faq and stock are not edited here,
 // but they still have to travel in their input shape so an update leaves them intact.
 const toValues = (product) => ({
@@ -54,14 +46,7 @@ export default function ProductForm({ mode }) {
             disabled={isView}
             validate={required('Thumbnail is required')}
           />
-          <Field
-            name="images"
-            label="Images"
-            placeholder="Media ids, comma separated"
-            disabled={isView}
-            format={formatIds}
-            parse={parseIds}
-          />
+          <Field name="images" label="Images" type="image" multiple disabled={isView} />
 
           <Field name="brand" label="Brand" url="/brand" disabled={isView} />
           <Field name="category" label="Categories" url="/category" multiple disabled={isView} />

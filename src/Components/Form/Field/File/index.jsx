@@ -1,9 +1,10 @@
 import { createElement, useEffect, useRef, useState } from 'react'
 import { Button, Spinner } from 'react-bootstrap'
 import { toast } from 'react-toastify'
-import { FiTrash, FiUpload } from '../../../Icons'
+import { FiPlus, FiTrash, FiUpload, FiX } from '../../../Icons'
 import api from '../../../../helpers/axios'
-import { fileIcon, isImage } from '../../../../helpers/fileIcon'
+import { fileIcon, isImage, matchesAccept } from '../../../../helpers/file'
+import MediaPicker from './Picker'
 
 const MEDIA_URL = '/media'
 
@@ -25,25 +26,15 @@ const DELETE_WARNING =
 
 const formatMb = (bytes) => `${(bytes / MB).toFixed(bytes % MB ? 1 : 0)}MB`
 
-// `accept` reads like the input attribute: 'image/*', 'image/png,.webp', …
-const matchesAccept = (file, accept) =>
-  !accept ||
-  accept
-    .split(',')
-    .map((rule) => rule.trim().toLowerCase())
-    .filter(Boolean)
-    .some((rule) => {
-      if (rule.startsWith('.')) return file.name.toLowerCase().endsWith(rule)
-      if (rule.endsWith('/*')) return file.type.startsWith(rule.slice(0, -1))
-
-      return file.type.toLowerCase() === rule
-    })
+const toIds = (value) => (Array.isArray(value) ? value : value ? [value] : [])
 
 /**
- * Uploads one file to the media API and keeps its id in the form. Anything the
- * API accepts can be uploaded; an image is previewed, everything else shows the
- * icon for its kind. The bytes live in S3 from the moment they are picked, so
- * removing the file deletes the record for good rather than only detaching it.
+ * Holds media by id: uploads new files, or picks ones already in the library.
+ * An image is previewed, anything else shows the icon for its kind.
+ *
+ * The bytes live in S3 from the moment they are picked, and the record is
+ * shared, so this only ever lets go of a file rather than destroying it --
+ * unless `hardDelete` or `overwrite` says otherwise.
  */
 export default function FileInput({
   input,
@@ -59,49 +50,63 @@ export default function FileInput({
   // the field at it, leaving anything else using the old one untouched; opting
   // in rewrites the bytes in place, under the id every record shares.
   overwrite = false,
+  // Holds a list of ids rather than one.
+  multiple = false,
+  // Offers what is already in the media library, alongside uploading.
+  allowExisting = true,
+  // What the corner button does. By default it only detaches the file from
+  // this field, leaving the record for other forms and the media library;
+  // opting in deletes the file itself, everywhere, for good.
+  hardDelete = false,
 }) {
-  const value = input.value || ''
+  const values = toIds(input.value)
 
-  // The last record read or uploaded; only shown while the field still points at it.
-  const [loaded, setLoaded] = useState(null)
+  // id -> record, for previews. Uploads and picks fill it without a round trip.
+  const [records, setRecords] = useState({})
   const [busy, setBusy] = useState('')
   const [rejected, setRejected] = useState('')
+  const [picking, setPicking] = useState(false)
 
   const picker = useRef(null)
 
-  const media = value && loaded?.id === value ? loaded : null
+  const remember = (record) => setRecords((previous) => ({ ...previous, [record.id]: record }))
 
-  // A value the form arrived with is only an id, so its preview is read back.
+  // Ids the form arrived with carry no preview, so those are read back.
+  const unknown = values.filter((id) => !records[id]).join(',')
+
   useEffect(() => {
-    if (!value || loaded?.id === value) return
+    if (!unknown) return
 
     let active = true
 
-    api
-      .get(`${MEDIA_URL}/${value}`)
-      .then(({ data }) => {
-        const record = data.media ?? data
+    for (const id of unknown.split(',')) {
+      api
+        .get(`${MEDIA_URL}/${id}`)
+        .then(({ data }) => {
+          const record = data.media ?? data
 
-        if (active) {
-          setLoaded({
-            id: record.id,
-            url: record.url,
-            name: record.originalName,
-            mimetype: record.mimetype,
-          })
-        }
-      })
-      // A missing record leaves the id on show rather than a broken picture.
-      .catch(() => {})
+          if (active) setRecords((previous) => ({ ...previous, [record.id]: record }))
+        })
+        // A missing record leaves the id on show rather than a broken picture.
+        .catch(() => {})
+    }
 
     return () => {
       active = false
     }
-  }, [value, loaded])
+  }, [unknown])
+
+  const commit = (ids) => {
+    // An empty field drops out of the payload rather than sending '' or [].
+    input.onChange(multiple ? (ids.length ? ids : undefined) : ids[0])
+    input.onBlur()
+  }
 
   const reject = (file) => {
     if (!matchesAccept(file, accept)) return `${file.name} is not an accepted file type (${accept}).`
-    if (file.size > maxSizeMb * MB) return `${file.name} is ${formatMb(file.size)}, over the ${maxSizeMb}MB limit.`
+    if (file.size > maxSizeMb * MB) {
+      return `${file.name} is ${formatMb(file.size)}, over the ${maxSizeMb}MB limit.`
+    }
 
     return ''
   }
@@ -124,31 +129,23 @@ export default function FileInput({
 
     body.append('file', file)
 
+    // Only a single field swaps in place; a list appends instead.
+    const replacing = !multiple && Boolean(values[0]) && replaceable && overwrite
+
     setBusy('upload')
 
     try {
-      // An in-place swap rewrites the bytes behind the id the form already
-      // holds, so the old file stops existing rather than being orphaned in the
-      // bucket; otherwise this is a fresh upload the field then points at.
       // The shared client sends JSON; the boundary has to come from the browser.
-      const inPlace = Boolean(value) && replaceable && overwrite
-
       const { data } = await api({
-        url: inPlace ? `${MEDIA_URL}/${value}` : MEDIA_URL,
-        method: inPlace ? 'PUT' : 'POST',
+        url: replacing ? `${MEDIA_URL}/${values[0]}` : MEDIA_URL,
+        method: replacing ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'multipart/form-data' },
         data: body,
       })
       const record = data.media ?? data
 
-      setLoaded({
-        id: record.id,
-        url: record.url,
-        name: record.originalName,
-        mimetype: record.mimetype,
-      })
-      input.onChange(record.id)
-      input.onBlur()
+      remember(record)
+      commit(multiple ? [...values, record.id] : [record.id])
     } catch (error) {
       toast.error(error.response?.data?.error || error.response?.data?.message || error.message)
     } finally {
@@ -162,19 +159,25 @@ export default function FileInput({
     if (!overwrite || window.confirm(REPLACE_WARNING)) pick()
   }
 
-  const remove = async () => {
+  const detach = (id) => {
+    setRejected('')
+    commit(values.filter((value) => value !== id))
+  }
+
+  const remove = async (id) => {
+    if (!hardDelete) {
+      detach(id)
+      return
+    }
+
     if (!window.confirm(DELETE_WARNING)) return
 
-    setBusy('remove')
+    setBusy(`remove:${id}`)
 
     try {
-      await api.delete(`${MEDIA_URL}/${value}`)
+      await api.delete(`${MEDIA_URL}/${id}`)
 
-      setLoaded(null)
-      setRejected('')
-      // Dropping the key entirely, so an empty string never reaches the API.
-      input.onChange(undefined)
-      input.onBlur()
+      detach(id)
     } catch (error) {
       toast.error(error.response?.data?.error || error.response?.data?.message || error.message)
     } finally {
@@ -182,7 +185,73 @@ export default function FileInput({
     }
   }
 
+  const select = (chosen) => {
+    chosen.forEach(remember)
+
+    const ids = chosen.map((record) => record.id)
+
+    commit(multiple ? [...values, ...ids.filter((id) => !values.includes(id))] : ids.slice(0, 1))
+    setPicking(false)
+  }
+
   const invalid = (meta.touched && Boolean(meta.error)) || Boolean(rejected)
+
+  const preview = (id, tall) => {
+    const record = records[id]
+    const removing = busy === `remove:${id}`
+
+    return (
+      <div
+        className={`position-relative border rounded overflow-hidden bg-body-secondary ${
+          invalid ? 'border-danger' : ''
+        }`}
+        style={tall ? { height } : undefined}
+      >
+        <div className={tall ? 'h-100' : 'ratio ratio-1x1'}>
+          {record?.url && isImage(record.mimetype) ? (
+            <img
+              src={record.url}
+              alt={record.originalName || 'Selected file'}
+              className="w-100 h-100 object-fit-contain"
+            />
+          ) : (
+            <div className="d-flex flex-column h-100 align-items-center justify-content-center gap-2 text-muted small text-break px-2">
+              {record ? (
+                <>
+                  {createElement(fileIcon(record.mimetype), { size: 28 })}
+                  <span className="text-truncate mw-100">{record.originalName}</span>
+                </>
+              ) : (
+                !removing && id
+              )}
+            </div>
+          )}
+        </div>
+
+        {!disabled && (
+          <Button
+            variant={hardDelete ? 'danger' : 'secondary'}
+            size="sm"
+            className="position-absolute top-0 end-0 m-2 d-inline-flex align-items-center"
+            title={hardDelete ? 'Delete file' : 'Remove from this field'}
+            aria-label={hardDelete ? 'Delete file' : 'Remove from this field'}
+            disabled={Boolean(busy)}
+            onClick={() => remove(id)}
+          >
+            {removing ? (
+              <Spinner animation="border" size="sm" role="status">
+                <span className="visually-hidden">Deleting…</span>
+              </Spinner>
+            ) : hardDelete ? (
+              <FiTrash />
+            ) : (
+              <FiX />
+            )}
+          </Button>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div className={invalid ? 'is-invalid' : ''}>
@@ -195,54 +264,13 @@ export default function FileInput({
         onChange={upload}
       />
 
-      <div
-        className={`p-1 position-relative border rounded overflow-hidden bg-body-secondary ${
-          invalid ? 'border-danger' : ''
-        }`}
-        style={{ height }}
-      >
-        {value ? (
-          <>
-            {media?.url && isImage(media.mimetype) ? (
-              <img
-                src={media.url}
-                alt={media.name || 'Selected file'}
-                className="w-100 h-100 object-fit-contain"
-              />
-            ) : (
-              <div className="d-flex flex-column h-100 align-items-center justify-content-center gap-2 text-muted small text-break px-3">
-                {media ? (
-                  <>
-                    {createElement(fileIcon(media.mimetype), { size: 28 })}
-                    <span className="text-truncate mw-100">{media.name}</span>
-                  </>
-                ) : (
-                  busy !== 'remove' && value
-                )}
-              </div>
-            )}
-
-            {!disabled && (
-              <Button
-                variant="danger"
-                size="sm"
-                className="position-absolute top-0 end-0 m-2 d-inline-flex align-items-center"
-                title="Delete file"
-                aria-label="Delete file"
-                disabled={Boolean(busy)}
-                onClick={remove}
-              >
-                {busy === 'remove' ? (
-                  <Spinner animation="border" size="sm" role="status">
-                    <span className="visually-hidden">Deleting…</span>
-                  </Spinner>
-                ) : (
-                  <FiTrash />
-                )}
-              </Button>
-            )}
-          </>
-        ) : (
+      {!values.length ? (
+        <div
+          className={`border rounded overflow-hidden bg-body-secondary ${
+            invalid ? 'border-danger' : ''
+          }`}
+          style={{ height }}
+        >
           <button
             type="button"
             className="btn btn-link w-100 h-100 d-flex flex-column align-items-center justify-content-center gap-2 text-decoration-none text-body-secondary"
@@ -263,12 +291,35 @@ export default function FileInput({
               </>
             )}
           </button>
-        )}
-      </div>
+        </div>
+      ) : multiple ? (
+        <div className="row g-2">
+          {values.map((id) => (
+            <div className="col-6 col-md-4 col-lg-3" key={id}>
+              {preview(id)}
+            </div>
+          ))}
+        </div>
+      ) : (
+        preview(values[0], true)
+      )}
 
-      {value && !disabled && (
-        <div className="d-flex align-items-center gap-2 mt-2">
-          {replaceable && (
+      {!disabled && (
+        <div className="d-flex flex-wrap align-items-center gap-2 mt-2">
+          {(multiple || !values.length) && (
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              className="d-inline-flex align-items-center gap-1"
+              disabled={Boolean(busy)}
+              onClick={pick}
+            >
+              {multiple && Boolean(values.length) ? <FiPlus /> : <FiUpload />}
+              {busy === 'upload' ? 'Uploading…' : 'Upload'}
+            </Button>
+          )}
+
+          {!multiple && Boolean(values.length) && replaceable && (
             <Button
               variant="outline-secondary"
               size="sm"
@@ -278,11 +329,37 @@ export default function FileInput({
               {busy === 'upload' ? 'Uploading…' : 'Replace'}
             </Button>
           )}
-          {media?.name && <span className="small text-muted text-truncate">{media.name}</span>}
+
+          {allowExisting && (
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              disabled={Boolean(busy)}
+              onClick={() => setPicking(true)}
+            >
+              Choose existing
+            </Button>
+          )}
+
+          {!multiple && records[values[0]]?.originalName && (
+            <span className="small text-muted text-truncate">
+              {records[values[0]].originalName}
+            </span>
+          )}
         </div>
       )}
 
       {rejected && <div className="small text-danger mt-2">{rejected}</div>}
+
+      {allowExisting && (
+        <MediaPicker
+          show={picking}
+          multiple={multiple}
+          accept={accept}
+          onClose={() => setPicking(false)}
+          onSave={select}
+        />
+      )}
     </div>
   )
 }

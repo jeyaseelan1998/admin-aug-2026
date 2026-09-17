@@ -54,6 +54,7 @@ export default function Field({
               meta={meta}
               placeholder={placeholder ?? (type === 'image' ? 'Upload an image' : undefined)}
               accept={type === 'image' ? 'image/*' : undefined}
+              multiple={multiple}
               {...props}
             />
           ) : isDropdown ? (

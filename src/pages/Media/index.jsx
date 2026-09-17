@@ -1,7 +1,7 @@
 import { createElement } from 'react'
 import { Card } from 'react-bootstrap'
 import List from '../../Components/List'
-import { fileIcon, isImage } from '../../helpers/fileIcon'
+import { fileIcon, isImage } from '../../helpers/file'
 
 const UNITS = ['B', 'KB', 'MB', 'GB']
 
