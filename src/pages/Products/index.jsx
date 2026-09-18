@@ -4,7 +4,7 @@ const columns = [
   { key: 'name', label: 'Name' },
   { key: 'brand.name', label: 'Brand' },
   { key: 'price', label: 'Price' },
-  { key: 'discount', label: 'Discount' },
+  { key: 'discount', label: 'Discount', type: 'percent' },
   { key: 'rating', label: 'Rating' },
 ]
 

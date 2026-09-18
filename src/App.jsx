@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom"
+import { Navigate, Route, Routes } from "react-router-dom"
 import Guest from "./Layout/Guest"
 import Brands from "./pages/Brands"
 import BrandForm from "./pages/Brands/Form"
@@ -8,11 +8,11 @@ import Colors from "./pages/Colors"
 import ColorForm from "./pages/Colors/Form"
 import Footer from "./pages/Footer"
 import Header from "./pages/Header"
-import Home from "./pages/Home"
 import Login from "./pages/Login"
 import Media from "./pages/Media"
 import NotFound from "./pages/NotFound"
 import Pages from "./pages/Pages"
+import PageForm from "./pages/Pages/Form"
 import Products from "./pages/Products"
 import ProductForm from "./pages/Products/Form"
 import PromoCodes from "./pages/PromoCodes"
@@ -34,9 +34,12 @@ function App() {
       </Route>
 
       <Route element={<Protected />}>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Navigate to="/users" replace />} />
 
         <Route path="/pages" element={<Pages />} />
+        <Route path="/pages/create" element={<PageForm />} />
+        <Route path="/pages/:id/update" element={<PageForm mode="update" />} />
+        <Route path="/pages/:id" element={<PageForm mode="view" />} />
         <Route path="/header" element={<Header />} />
         <Route path="/footer" element={<Footer />} />
 
@@ -90,4 +93,4 @@ function App() {
   )
 }
 
-export default App
+export default App;

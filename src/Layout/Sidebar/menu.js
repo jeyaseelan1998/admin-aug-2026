@@ -21,7 +21,7 @@ import {
 import api from '../../helpers/axios'
 
 const CONTENT = [
-  { to: '/pages', label: 'Pages', icon: FiFileText, end: true },
+  { to: '/pages', label: 'Pages', icon: FiFileText },
   {
     label: 'Sections',
     icon: FiLayout,

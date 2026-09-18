@@ -69,8 +69,13 @@ export default function FileInput({
   const [busy, setBusy] = useState('')
   const [rejected, setRejected] = useState('')
   const [picking, setPicking] = useState(false)
+  const [dragging, setDragging] = useState(false)
 
   const picker = useRef(null)
+
+  // dragenter/dragleave fire again for every child the pointer crosses, so the
+  // highlight follows a depth count rather than the last event seen.
+  const depth = useRef(0)
 
   // Merged, so a record handed back by the picker as a bare id never wipes a
   // preview that has already been read.
@@ -133,13 +138,9 @@ export default function FileInput({
     return data.media ?? data
   }
 
-  const upload = async (event) => {
-    // A list takes everything picked; a single field only ever the first.
-    const chosen = Array.from(event.target.files || [])
+  const upload = async (chosen) => {
+    // A list takes everything given; a single field only ever the first.
     const files = multiple ? chosen : chosen.slice(0, 1)
-
-    // Clearing lets the same file be picked again after a removal.
-    event.target.value = ''
 
     if (!files.length) return
 
@@ -187,10 +188,67 @@ export default function FileInput({
     setBusy('')
   }
 
+  const onPicked = (event) => {
+    const chosen = Array.from(event.target.files || [])
+
+    // Clearing lets the same file be picked again after a removal.
+    event.target.value = ''
+
+    upload(chosen)
+  }
+
   const pick = () => picker.current?.click()
 
   const replace = () => {
     if (!overwrite || window.confirm(REPLACE_WARNING)) pick()
+  }
+
+  // A single field that already holds a file only takes a drop if it offers a
+  // swap at all -- the same rule that decides whether Replace is there.
+  const swappable = multiple || !values[0] || replaceable
+
+  // Dragged text or a link is not something to upload, and a field that is
+  // disabled or already busy takes nothing at all.
+  const droppable = (event) =>
+    !disabled &&
+    !busy &&
+    swappable &&
+    Array.from(event.dataTransfer?.types || []).includes('Files')
+
+  const onDragEnter = (event) => {
+    if (!droppable(event)) return
+
+    depth.current += 1
+    setDragging(true)
+  }
+
+  // Without this the browser opens the file instead of handing it over.
+  const onDragOver = (event) => {
+    if (droppable(event)) event.preventDefault()
+  }
+
+  const onDragLeave = () => {
+    depth.current = Math.max(depth.current - 1, 0)
+
+    if (!depth.current) setDragging(false)
+  }
+
+  const onDrop = (event) => {
+    if (!droppable(event)) return
+
+    event.preventDefault()
+    depth.current = 0
+    setDragging(false)
+
+    const dropped = Array.from(event.dataTransfer.files || [])
+
+    if (!dropped.length) return
+
+    // Dropping onto a single field that is already filled is a replace, so it
+    // asks the same question the Replace button does.
+    if (!multiple && values[0] && overwrite && !window.confirm(REPLACE_WARNING)) return
+
+    upload(dropped)
   }
 
   const detach = (id) => {
@@ -293,7 +351,20 @@ export default function FileInput({
   }
 
   return (
-    <div className={invalid ? 'is-invalid' : ''}>
+    <div
+      className={invalid ? 'is-invalid' : ''}
+      // An outline rather than a border: it sits outside the box, so the field
+      // does not jump as the highlight comes and goes.
+      style={
+        dragging
+          ? { outline: '2px dashed var(--bs-primary)', outlineOffset: '4px', borderRadius: '.375rem' }
+          : undefined
+      }
+      onDragEnter={onDragEnter}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+    >
       <input
         ref={picker}
         type="file"
@@ -301,7 +372,7 @@ export default function FileInput({
         multiple={multiple}
         className="d-none"
         disabled={disabled || Boolean(busy)}
-        onChange={upload}
+        onChange={onPicked}
       />
 
       {!values.length ? (
@@ -327,9 +398,12 @@ export default function FileInput({
             ) : (
               <>
                 <FiUpload size={24} />
-                <span>{placeholder}</span>
+                <span>{dragging ? 'Drop to upload' : placeholder}</span>
                 <span className="small text-muted">
                   {accept || 'Any file'} · up to {maxSizeMb}MB
+                </span>
+                <span className="small text-muted">
+                  Drag {multiple ? 'files' : 'a file'} here, or click to browse
                 </span>
               </>
             )}

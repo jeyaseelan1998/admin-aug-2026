@@ -13,6 +13,7 @@ const CELL_TYPES = {
       title={value}
     />
   ),
+  percent: (value) => `${value}%`,
 }
 
 // `copy: true` copies the raw cell value; a function returns the text to copy instead.
