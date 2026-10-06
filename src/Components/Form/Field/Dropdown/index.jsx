@@ -163,6 +163,8 @@ function SearchSelect({
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [active, setActive] = useState(0)
+  // Index of the chip being dragged; the order follows it as it passes others.
+  const [dragging, setDragging] = useState(null)
 
   const isSelected = (value) => values.some((selected) => key(selected) === key(value))
 
@@ -226,6 +228,14 @@ function SearchSelect({
     )
   }
 
+  const move = (from, to) => {
+    const next = [...values]
+    const [moved] = next.splice(from, 1)
+
+    next.splice(to, 0, moved)
+    input.onChange(next)
+  }
+
   const remove = (event, value) => {
     event.stopPropagation()
     input.onChange(multiple ? values.filter((selected) => key(selected) !== key(value)) : '')
@@ -278,10 +288,32 @@ function SearchSelect({
         {!values.length && <span className="text-muted">{placeholder || 'Select…'}</span>}
 
         {multiple
-          ? values.map((value) => (
+          ? values.map((value, index) => (
               <span
                 key={key(value)}
-                className="badge text-bg-secondary d-inline-flex align-items-center gap-1"
+                className={`badge text-bg-secondary d-inline-flex align-items-center gap-1 ${
+                  dragging === index ? 'opacity-50' : ''
+                }`}
+                style={disabled ? undefined : { cursor: 'grab' }}
+                draggable={!disabled}
+                onDragStart={(event) => {
+                  event.dataTransfer.effectAllowed = 'move'
+                  // Firefox starts no drag without data.
+                  event.dataTransfer.setData('text/plain', key(value))
+                  setDragging(index)
+                }}
+                onDragOver={(event) => {
+                  if (dragging === null) return
+
+                  event.preventDefault()
+
+                  if (dragging !== index) {
+                    move(dragging, index)
+                    setDragging(index)
+                  }
+                }}
+                onDrop={(event) => event.preventDefault()}
+                onDragEnd={() => setDragging(null)}
               >
                 {labelOf(value)}
                 {!disabled && (

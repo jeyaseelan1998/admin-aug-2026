@@ -1,3 +1,4 @@
+import BrandsFields from './Brands'
 import HeroFields from './Hero'
 
 // A wireframe of the layout, so the picker shows the shape of a widget rather
@@ -15,6 +16,13 @@ const HERO_PREVIEW = preview(
     '<rect x="96" y="16" width="52" height="58" rx="4" fill="#ced4da"/>'
 )
 
+const BRANDS_PREVIEW = preview(
+  '<rect x="12" y="34" width="28" height="22" rx="3" fill="#ced4da"/>' +
+    '<rect x="47" y="34" width="28" height="22" rx="3" fill="#ced4da"/>' +
+    '<rect x="82" y="34" width="28" height="22" rx="3" fill="#ced4da"/>' +
+    '<rect x="117" y="34" width="28" height="22" rx="3" fill="#ced4da"/>'
+)
+
 /**
  * The widget types the CMS offers, in the order the picker lists them. The API
  * takes whatever shape `type` names, so a new type is one more entry here:
@@ -29,6 +37,14 @@ export const WIDGETS = [
     image: HERO_PREVIEW,
     blank: () => ({ type: 'hero', title: '', stats: [] }),
     Fields: HeroFields,
+  },
+  {
+    value: 'brands',
+    label: 'Brands',
+    text: 'A row of selected brands.',
+    image: BRANDS_PREVIEW,
+    blank: () => ({ type: 'brands', brands: [] }),
+    Fields: BrandsFields,
   },
 ]
 

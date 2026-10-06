@@ -19,6 +19,14 @@ const parseStatus = (value) => (value === '' || value == null ? undefined : Numb
 // Blank text is dropped rather than sent as '': the API takes null or nothing.
 const optional = (value) => value || undefined
 
+const formatKeywords = (value) => (Array.isArray(value) ? value.join(', ') : value || '')
+
+const parseKeywords = (value) =>
+  value
+    .split(',')
+    .map((keyword) => keyword.trim())
+    .filter(Boolean)
+
 const omit = (record, keys) => {
   const values = { ...record }
 
@@ -27,18 +35,23 @@ const omit = (record, keys) => {
   return values
 }
 
-// A widget arrives with its media populated and with the ids the API minted for
-// the subdocuments; it goes back as media ids, and the API mints those ids anew.
+// A widget arrives with its refs populated and with the ids the API minted for
+// the subdocuments; it goes back as ref ids, and the API mints those ids anew.
 const toWidget = (widget) => {
   const values = omit(widget, ['_id'])
 
   if (values.image) values.image = values.image.id ?? values.image
+  if (values.brands) values.brands = values.brands.map((brand) => brand?.id ?? brand)
   if (values.stats) values.stats = values.stats.map((stat) => omit(stat, ['_id']))
 
   return values
 }
 
-const toValues = (page) => ({ ...page, widgets: (page.widgets || []).map(toWidget) })
+const toValues = (page) => ({
+  ...page,
+  ogImage: page.ogImage?.id ?? null,
+  widgets: (page.widgets || []).map(toWidget),
+})
 
 function Widgets({ disabled }) {
   const [picking, setPicking] = useState(false)
@@ -141,6 +154,15 @@ export default function PageForm({ mode }) {
             parse={optional}
             disabled={isView}
           />
+          <Field
+            name="keywords"
+            label="Keywords"
+            placeholder="about, company"
+            disabled={isView}
+            format={formatKeywords}
+            parse={parseKeywords}
+          />
+          <Field name="ogImage" label="OG image" type="image" disabled={isView} />
 
           <Widgets disabled={isView} />
         </>
