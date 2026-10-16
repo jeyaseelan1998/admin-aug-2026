@@ -1,6 +1,7 @@
 import { Alert, Button, Card } from 'react-bootstrap'
 import Form from '../../Components/Form'
 import Field from '../../Components/Form/Field'
+import { saveSession } from '../../helpers/session'
 import { required } from '../../helpers/validators'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -20,7 +21,13 @@ export default function Login() {
           <Alert variant="warning">Your session has ended. Please sign in again.</Alert>
         )}
 
-        <Form url="/auth/signin" onSuccess={() => navigate('/')}>
+        <Form
+          url="/auth/signin"
+          onSuccess={(session) => {
+            saveSession(session)
+            navigate('/')
+          }}
+        >
           {({ submitting }) => (
             <>
               <Field

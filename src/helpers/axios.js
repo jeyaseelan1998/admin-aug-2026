@@ -1,21 +1,33 @@
 import axios from 'axios'
+import { clearSession, getToken } from './session'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
   headers: {
     'Content-Type': 'application/json',
     Accept: 'application/json',
-    'X-Client-Type': 'web'
   },
-  withCredentials: true,
+})
+
+// The API sets no cookies: the token is kept client-side and sent on every request.
+api.interceptors.request.use((config) => {
+  const token = getToken()
+
+  if (token) config.headers.Authorization = `Bearer ${token}`
+
+  return config
 })
 
 // Auth calls answer 401 as part of their normal flow (a wrong password, no
 // session yet), so their callers handle it themselves.
 const AUTH_PATHS = ['/auth/signin', '/auth/signout', '/auth/profile']
 
-// A full reload, like logout: it drops everything the ended session had cached.
-export const endSession = () => window.location.replace('/login?ended=1')
+// Drops the stored token, then reloads like logout so nothing the ended
+// session had cached survives.
+export const endSession = () => {
+  clearSession()
+  window.location.replace('/login?ended=1')
+}
 
 // A 401 anywhere else means the session is over -- expired, or ended by an
 // admin -- so the user is sent to sign in again instead of seeing errors.

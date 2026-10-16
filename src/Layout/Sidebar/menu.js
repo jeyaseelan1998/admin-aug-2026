@@ -19,6 +19,7 @@ import {
   FiUsers,
 } from '../../Components/Icons'
 import api from '../../helpers/axios'
+import { clearSession } from '../../helpers/session'
 
 const CONTENT = [
   { to: '/pages', label: 'Pages', icon: FiFileText },
@@ -57,10 +58,11 @@ const ADMIN = [
   },
 ]
 
-// The cms_token cookie is httpOnly, so only the server can clear it; the reload
-// afterwards drops every cached profile/list response the session held.
+// The signout call marks the account offline; the token itself lives here, so
+// it is dropped locally either way. The reload clears every cached response.
 const logout = async () => {
   await api.post('/auth/signout').catch(() => { })
+  clearSession()
 
   window.location.replace('/login')
 }
