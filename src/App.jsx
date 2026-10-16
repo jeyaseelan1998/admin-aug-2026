@@ -24,6 +24,7 @@ import SocialForm from "./pages/Socials/Form"
 import Styles from "./pages/Styles"
 import StyleForm from "./pages/Styles/Form"
 import Users from "./pages/Users"
+import UserForm from "./pages/Users/Form"
 import Protected from "./Layout/Protected"
 
 function App() {
@@ -75,6 +76,9 @@ function App() {
         <Route path="/sizes/:id" element={<SizeForm mode="view" />} />
 
         <Route path="/users" element={<Users />} />
+        <Route path="/users/create" element={<UserForm />} />
+        <Route path="/users/:id/update" element={<UserForm mode="update" />} />
+        <Route path="/users/:id" element={<UserForm mode="view" />} />
         <Route path="/promo-codes" element={<PromoCodes />} />
         <Route path="/promo-codes/create" element={<PromoCodeForm />} />
         <Route path="/promo-codes/:id/update" element={<PromoCodeForm mode="update" />} />

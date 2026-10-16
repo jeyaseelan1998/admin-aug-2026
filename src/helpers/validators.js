@@ -17,6 +17,10 @@ export const number =
       ? undefined
       : message
 
+// Empty passes, so an optional field (e.g. a password left blank on edit) is fine.
+export const minLength = (min, message = `Must be at least ${min} characters`) => (value) =>
+  !value || String(value).length >= min ? undefined : message
+
 // Runs validators in order and reports the first complaint.
 export const compose =
   (...validators) =>

@@ -5,6 +5,7 @@ import { FiPlus, FiTrash, FiUpload, FiX } from '../../../Icons'
 import api from '../../../../helpers/axios'
 import { fileIcon, isImage, matchesAccept } from '../../../../helpers/file'
 import MediaPicker from './Picker'
+import { getErrorMessage } from '../../../../helpers/errorMessage'
 
 const MEDIA_URL = '/media'
 
@@ -26,8 +27,7 @@ const DELETE_WARNING =
 
 const formatMb = (bytes) => `${(bytes / MB).toFixed(bytes % MB ? 1 : 0)}MB`
 
-const apiError = (error) =>
-  error.response?.data?.error || error.response?.data?.message || error.message
+const apiError = (error) => getErrorMessage(error)
 
 const toIds = (value) => (Array.isArray(value) ? value : value ? [value] : [])
 

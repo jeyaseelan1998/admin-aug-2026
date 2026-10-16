@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Spinner } from 'react-bootstrap'
 import { toast } from 'react-toastify'
 import api from '../../helpers/axios'
+import { getErrorMessage } from '../../helpers/errorMessage'
 
 const resolveMessage = (message, value) =>
   typeof message === 'function' ? message(value) : message
@@ -63,7 +64,7 @@ export default function Fetch({
 
       return parsed
     } catch (requestError) {
-      const message = requestError.response?.data?.message || requestError.message
+      const message = getErrorMessage(requestError)
 
       setError(requestError)
       setLoading(false)

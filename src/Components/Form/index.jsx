@@ -4,6 +4,7 @@ import { FORM_ERROR } from 'final-form'
 import { Form as FinalForm } from 'react-final-form'
 import { toast } from 'react-toastify'
 import api from '../../helpers/axios'
+import { getErrorMessage } from '../../helpers/errorMessage'
 
 const resolveMessage = (message, value) =>
   typeof message === 'function' ? message(value) : message
@@ -60,7 +61,7 @@ export default function Form({
         if (!active) return
 
         const current = latest.current
-        const message = error.response?.data?.message || error.message
+        const message = getErrorMessage(error)
 
         setLoading(false)
 
@@ -91,7 +92,7 @@ export default function Form({
       }
       onSuccess?.(data, values)
     } catch (error) {
-      const message = error.response?.data?.message || error.message
+      const message = getErrorMessage(error)
 
       if (toastOnError) {
         toast.error(resolveMessage(errorMessage, error) || message, toastOptions)

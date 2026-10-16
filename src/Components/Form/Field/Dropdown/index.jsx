@@ -3,6 +3,7 @@ import { Form as BsForm, Spinner } from 'react-bootstrap'
 import { toast } from 'react-toastify'
 import { FiChevronDown, FiX } from '../../../Icons'
 import api from '../../../../helpers/axios'
+import { getErrorMessage } from '../../../../helpers/errorMessage'
 
 // One page of lookup rows; the search panel pulls the next as it is scrolled.
 const PAGE_SIZE = 20
@@ -74,7 +75,7 @@ const useOptions = (url, paramsKey, parseOptions, searchable) => {
     } catch (error) {
       // Stop the observer from retrying the same failing page forever.
       setLoaded((previous) => ({ ...previous, hasMore: false, loading: false }))
-      toast.error(error.response?.data?.message || error.message)
+      toast.error(getErrorMessage(error))
     }
   }
 

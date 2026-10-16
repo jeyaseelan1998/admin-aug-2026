@@ -6,6 +6,7 @@ import { FiCopy, FiEdit, FiEye, FiPlus, FiRepeat, FiTrash, FiX } from '../Icons'
 import api from '../../helpers/axios'
 import { resolvePath } from '../../helpers/resolvePath'
 import Cell from './Cell'
+import { getErrorMessage } from '../../helpers/errorMessage'
 
 const resolveMessage = (message, value) =>
   typeof message === 'function' ? message(value) : message
@@ -173,7 +174,7 @@ export default function List({
       setPage(nextPage)
       setLoading(false)
     } catch (error) {
-      const message = error.response?.data?.message || error.message
+      const message = getErrorMessage(error)
 
       // Stop the observer from retrying the same failing page forever.
       setHasMore(false)
@@ -243,7 +244,7 @@ export default function List({
       }
       action.onSuccess?.(response.data, row, index)
     } catch (error) {
-      const message = error.response?.data?.message || error.message
+      const message = getErrorMessage(error)
 
       setBusy(null)
 
