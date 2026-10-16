@@ -10,6 +10,7 @@ import {
   FiShield,
 } from '../../Components/Icons'
 import SECTIONS from './menu'
+import { useConfirm } from '../../Components/Confirm/context'
 import './index.css'
 
 const MOBILE_QUERY = '(max-width: 780px)'
@@ -32,15 +33,34 @@ function SidebarLink({ to, label, icon, end, onNavigate, className = 'sidebar-li
 }
 
 // A menu item with no `to` runs an action (logout, a modal) instead of navigating.
-function SidebarAction({ label, icon, onClick, onNavigate, className = 'sidebar-link', ...props }) {
+// `confirm` (a question, or an options object with `message`) asks Yes/No first.
+function SidebarAction({
+  label,
+  icon,
+  onClick,
+  confirm: question,
+  onNavigate,
+  className = 'sidebar-link',
+  ...props
+}) {
+  const confirm = useConfirm()
+
+  const run = async () => {
+    if (question) {
+      const { message, ...options } = typeof question === 'string' ? { message: question } : question
+
+      if (!(await confirm(message, options))) return
+    }
+
+    onNavigate?.()
+    onClick?.()
+  }
+
   return (
     <button
       type="button"
       className={`${className} sidebar-group`}
-      onClick={() => {
-        onNavigate?.()
-        onClick?.()
-      }}
+      onClick={run}
       {...props}
     >
       {renderIcon(icon)}

@@ -23,6 +23,7 @@ export default function ResourceForm({
   url,
   resource,
   toValues,
+  toPayload,
   children,
 }) {
   const { id } = useParams()
@@ -53,6 +54,7 @@ export default function ResourceForm({
           fetchOnMount={Boolean(id)}
           fetchUrl={id ? `${url}/${id}` : undefined}
           parseFetched={parseFetched}
+          toPayload={toPayload}
           successMessage={isUpdate ? `${title} updated.` : `${title} created.`}
           onSuccess={() => navigate(basePath)}
         >

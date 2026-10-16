@@ -6,6 +6,7 @@ import api from '../../../../helpers/axios'
 import { fileIcon, isImage, matchesAccept } from '../../../../helpers/file'
 import MediaPicker from './Picker'
 import { getErrorMessage } from '../../../../helpers/errorMessage'
+import { useConfirm } from '../../../Confirm/context'
 
 const MEDIA_URL = '/media'
 
@@ -70,6 +71,8 @@ export default function FileInput({
   const [rejected, setRejected] = useState('')
   const [picking, setPicking] = useState(false)
   const [dragging, setDragging] = useState(false)
+
+  const confirm = useConfirm()
 
   const picker = useRef(null)
 
@@ -199,8 +202,8 @@ export default function FileInput({
 
   const pick = () => picker.current?.click()
 
-  const replace = () => {
-    if (!overwrite || window.confirm(REPLACE_WARNING)) pick()
+  const replace = async () => {
+    if (!overwrite || (await confirm(REPLACE_WARNING, { title: 'Replace file?' }))) pick()
   }
 
   // A single field that already holds a file only takes a drop if it offers a
@@ -233,7 +236,7 @@ export default function FileInput({
     if (!depth.current) setDragging(false)
   }
 
-  const onDrop = (event) => {
+  const onDrop = async (event) => {
     if (!droppable(event)) return
 
     event.preventDefault()
@@ -246,7 +249,13 @@ export default function FileInput({
 
     // Dropping onto a single field that is already filled is a replace, so it
     // asks the same question the Replace button does.
-    if (!multiple && values[0] && overwrite && !window.confirm(REPLACE_WARNING)) return
+    if (
+      !multiple &&
+      values[0] &&
+      overwrite &&
+      !(await confirm(REPLACE_WARNING, { title: 'Replace file?' }))
+    )
+      return
 
     upload(dropped)
   }
@@ -262,7 +271,7 @@ export default function FileInput({
       return
     }
 
-    if (!window.confirm(DELETE_WARNING)) return
+    if (!(await confirm(DELETE_WARNING, { title: 'Delete file?' }))) return
 
     setBusy(`remove:${id}`)
 

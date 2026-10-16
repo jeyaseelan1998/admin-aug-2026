@@ -16,6 +16,8 @@ export default function Form({
   fetchUrl,
   parseFetched,
   payload,
+  // Shapes the values before they are sent, e.g. to drop client-only fields.
+  toPayload,
   headers,
   initialValues,
   onSuccess,
@@ -84,7 +86,7 @@ export default function Form({
         url,
         method,
         headers,
-        data: { ...payload, ...values },
+        data: { ...payload, ...(toPayload ? toPayload(values) : values) },
       })
 
       if (successMessage) {

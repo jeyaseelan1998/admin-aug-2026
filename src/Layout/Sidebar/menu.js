@@ -62,11 +62,20 @@ const ADMIN = [
 const logout = async () => {
   await api.post('/auth/signout').catch(() => { })
 
-  window.location.replace('/admin/login')
+  window.location.replace('/login')
 }
 
 const ACCOUNT = [
-  { label: 'Logout', icon: FiLogOut, onClick: logout },
+  {
+    label: 'Logout',
+    icon: FiLogOut,
+    onClick: logout,
+    confirm: {
+      title: 'Log out?',
+      message: 'You will need to sign in again to use the admin.',
+      confirmLabel: 'Yes, log out',
+    },
+  },
 ]
 
 const SECTIONS = [

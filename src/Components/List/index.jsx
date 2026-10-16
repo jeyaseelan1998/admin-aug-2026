@@ -6,6 +6,7 @@ import { FiCopy, FiEdit, FiEye, FiPlus, FiRepeat, FiTrash, FiX } from '../Icons'
 import api from '../../helpers/axios'
 import { resolvePath } from '../../helpers/resolvePath'
 import Cell from './Cell'
+import { useConfirm } from '../Confirm/context'
 import { getErrorMessage } from '../../helpers/errorMessage'
 
 const resolveMessage = (message, value) =>
@@ -190,12 +191,14 @@ export default function List({
   // Key of the row/action pair whose request is in flight.
   const [busy, setBusy] = useState(null)
 
+  const confirm = useConfirm()
+
   const runAction = async (action, row, index) => {
     if (action.confirm) {
       const question =
         typeof action.confirm === 'function' ? action.confirm(row, index) : action.confirm
 
-      if (!window.confirm(question === true ? 'Are you sure?' : question)) return
+      if (!(await confirm(question === true ? 'Are you sure?' : question))) return
     }
 
     if (action.onClick) return action.onClick(row, index)

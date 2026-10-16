@@ -7,6 +7,7 @@ import 'bootstrap/dist/css/bootstrap.min.css'
 import 'react-toastify/dist/ReactToastify.css'
 import './index.css'
 import App from './App.jsx'
+import ConfirmProvider from './Components/Confirm'
 
 const MOBILE_QUERY = '(max-width: 780px)'
 
@@ -30,7 +31,9 @@ function ResponsiveToastContainer() {
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
-      <App />
+      <ConfirmProvider>
+        <App />
+      </ConfirmProvider>
       <ResponsiveToastContainer />
     </BrowserRouter>
   </StrictMode>,
