@@ -3,7 +3,7 @@ import List from '../../Components/List'
 const columns = [
   { key: 'name', label: 'Name' },
   { key: 'email', label: 'Email' },
-  { key: 'role', label: 'Role' },
+  { key: 'role.name', label: 'Role' },
   { key: 'status', label: 'Status' },
 ]
 
