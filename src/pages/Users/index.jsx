@@ -9,7 +9,8 @@ const renderStatus = (row) =>
     <Badge bg="success">Online</Badge>
   ) : (
     <span className="text-muted small">
-      {row.lastSeenAt ? `Last seen ${timeAgo(row.lastSeenAt)}` : 'Offline'}
+      {row.activeSessions ? 'Signed in, idle' : 'Logged out'}
+      {row.lastSeenAt ? ` · last seen ${timeAgo(row.lastSeenAt)}` : ''}
     </span>
   )
 
@@ -47,9 +48,10 @@ export default function Users() {
             urlSuffix: 'logout',
             confirm: (row) => `Log ${row.name} out of every device? They will have to sign in again.`,
             successMessage: (data) => `${data.user.name} has been logged out`,
-            // The row shows offline straight away, without reloading the list.
-            patch: { status: 'offline', lastSeenAt: null },
-            hidden: (row) => row.deleted === 1,
+            // The row shows logged out straight away, without reloading the list.
+            patch: { status: 'offline', lastSeenAt: null, activeSessions: 0 },
+            // Nothing to end when the user has no signed-in device.
+            hidden: (row) => row.deleted === 1 || !row.activeSessions,
           },
           ['DELETE', { confirm: (row) => `Delete ${row.name}?`, successMessage: 'User deleted' }],
           'RESTORE',

@@ -1,5 +1,6 @@
 import BrandsFields from './Brands'
 import HeroFields from './Hero'
+import ProductsFields from './Products'
 
 // A wireframe of the layout, so the picker shows the shape of a widget rather
 // than only its name. Inline, so a widget type stays one entry in this file.
@@ -21,6 +22,19 @@ const BRANDS_PREVIEW = preview(
     '<rect x="47" y="34" width="28" height="22" rx="3" fill="#ced4da"/>' +
     '<rect x="82" y="34" width="28" height="22" rx="3" fill="#ced4da"/>' +
     '<rect x="117" y="34" width="28" height="22" rx="3" fill="#ced4da"/>'
+)
+
+const PRODUCTS_PREVIEW = preview(
+  '<rect x="55" y="12" width="50" height="7" rx="2" fill="#adb5bd"/>' +
+    '<rect x="12" y="28" width="30" height="30" rx="3" fill="#ced4da"/>' +
+    '<rect x="47" y="28" width="30" height="30" rx="3" fill="#ced4da"/>' +
+    '<rect x="82" y="28" width="30" height="30" rx="3" fill="#ced4da"/>' +
+    '<rect x="117" y="28" width="30" height="30" rx="3" fill="#ced4da"/>' +
+    '<rect x="12" y="62" width="24" height="4" rx="2" fill="#ced4da"/>' +
+    '<rect x="47" y="62" width="24" height="4" rx="2" fill="#ced4da"/>' +
+    '<rect x="82" y="62" width="24" height="4" rx="2" fill="#ced4da"/>' +
+    '<rect x="117" y="62" width="24" height="4" rx="2" fill="#ced4da"/>' +
+    '<rect x="64" y="74" width="32" height="8" rx="4" fill="#6c757d"/>'
 )
 
 /**
@@ -45,6 +59,14 @@ export const WIDGETS = [
     image: BRANDS_PREVIEW,
     blank: () => ({ type: 'brands', brands: [] }),
     Fields: BrandsFields,
+  },
+  {
+    value: 'products',
+    label: 'Products',
+    text: 'A titled list of products, such as new arrivals or top selling.',
+    image: PRODUCTS_PREVIEW,
+    blank: () => ({ type: 'products', title: '', listType: '' }),
+    Fields: ProductsFields,
   },
 ]
 

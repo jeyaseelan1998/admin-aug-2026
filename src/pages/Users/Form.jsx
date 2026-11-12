@@ -8,7 +8,7 @@ const toValues = (user) => ({ ...user, role: user.role?.id })
 
 // Only shown, never sent: the confirmation guards against typos, and the
 // activity fields belong to the API.
-const CLIENT_ONLY = ['confirmPassword', 'status', 'lastLoginAt', 'lastSeenAt']
+const CLIENT_ONLY = ['confirmPassword', 'status', 'lastLoginAt', 'lastSeenAt', 'activeSessions']
 
 const toPayload = (values) => {
   const payload = { ...values }
@@ -72,6 +72,12 @@ export default function UserForm({ mode = 'create' }) {
                 name="status"
                 label="Status"
                 format={(value) => (value === 'online' ? 'Online' : 'Offline')}
+                disabled
+              />
+              <Field
+                name="activeSessions"
+                label="Signed-in devices"
+                format={(value) => String(value ?? 0)}
                 disabled
               />
               <Field name="lastLoginAt" label="Last sign-in" format={formatDateTime} disabled />
